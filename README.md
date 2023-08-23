@@ -14,10 +14,10 @@ The **Is Deployed** is a simple GUI application built using Python's Tkinter lib
 ### Images
 
 - Starting the app
-![startup](-)
+![startup](https://github.com/Mintakai/folderscanner/blob/main/docimg/startup.png)
 
 - Deployed status
-![deployed](-)
+![deployed](https://github.com/Mintakai/folderscanner/blob/main/docimg/deployed.png)
 
 ## Features
 
