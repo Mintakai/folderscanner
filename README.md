@@ -1,6 +1,6 @@
 # folderscanner (is_deployed)
 
-The **Is Deployed App** is a simple GUI application built using Python's Tkinter library. It allows users to check the status of a specified folder and visually displays whether the folder contains specific files indicating deployment status.
+The **Is Deployed** is a simple GUI application built using Python's Tkinter library. It allows users to check the status of a specified folder and visually displays whether the folder contains specific files indicating deployment status.
 
 - .deployed
   - The status area will be green and have text [DEPLOYED]
@@ -14,8 +14,8 @@ The **Is Deployed App** is a simple GUI application built using Python's Tkinter
 ## Features
 
 - Check the deployment status of a specified folder.
-- Visual indication of deployment status through background colors.
-- User-friendly interface with path browsing.
+- Visual indication of deployment status through background colors and status text.
+- Timestamp display of the last change in status.
 
 ## Usage
 
