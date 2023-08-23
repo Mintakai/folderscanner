@@ -43,8 +43,8 @@ The **Is Deployed** is a simple GUI application built using Python's Tkinter lib
 
    ```
 
-- onefile: Generate a single standalone executable file.
-- noconsole: Do not display a console window when the executable is run.
+  - onefile: Generate a single standalone executable file.
+  - noconsole: Do not display a console window when the executable is run.
 
 The built executable will be found in the dist directory.
 
