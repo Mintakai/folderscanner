@@ -32,6 +32,7 @@ Deployed status<br>
 
 - Python 3.x
 - Tkinter (usually included with Python)
+- PyInstaller (for building the executable)
 
 ### Installation
 
@@ -44,7 +45,14 @@ Deployed status<br>
    cd is_deployed
 
    ```
-3. Build the standalone executable using PyInstaller:
+3. Make sure you have pyinstaller installed
+
+   ```
+   
+   pip install pyinstaller
+
+   ```
+4. Build the standalone executable using PyInstaller:
 
    ```
 
