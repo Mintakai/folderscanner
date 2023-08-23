@@ -26,28 +26,21 @@ The **Is Deployed** is a simple GUI application built using Python's Tkinter lib
 
 ### Installation
 
-1. Clone the repository to your local machine:
+1. Clone the repository to your local machine
 
-   ```
-   
-   git clone https://github.com/yourusername/is-deployed-app.git
-   cd is-deployed-app
-   
-   ```
-   
 2. Navigate to the project directory:
 
    ```
-   
+
    cd is_deployed
-   
+
    ```
 3. Build the standalone executable using PyInstaller:
 
    ```
-   
+
    pyinstaller --onefile --noconsole .\is_deployed.py
-   
+
    ```
 
 - onefile: Generate a single standalone executable file.
