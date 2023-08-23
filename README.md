@@ -11,6 +11,14 @@ The **Is Deployed** is a simple GUI application built using Python's Tkinter lib
 - when neither is found
   - The status area will be red and have text [DOWN]
 
+### Images
+
+- Starting the app
+![startup](-)
+
+- Deployed status
+![deployed](-)
+
 ## Features
 
 - Check the deployment status of a specified folder.
