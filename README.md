@@ -13,7 +13,7 @@ The **Is Deployed** is a simple GUI application built using Python's Tkinter lib
 
 ### Images
 
-Starting the app<br>
+Starting the app (Unlike in this image, when you have a folder selected, it'll show the time since it's entered the down -state)<br>
 ![startup](https://github.com/Mintakai/folderscanner/blob/main/docimg/startup.png)
 
 Deployed status<br>
