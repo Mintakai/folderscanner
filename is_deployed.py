@@ -1,3 +1,4 @@
+from datetime import datetime
 import tkinter as tk
 from tkinter import ttk
 from tkinter import filedialog
@@ -6,22 +7,42 @@ import glob
 
 
 class StatusChecker:
+    STATUS_DOWN = "[DOWN]"
+    STATUS_DEPLOYED = "[DEPLOYED]"
+    STATUS_DEPLOYING = "[DEPLOYING]"
+
+    COLOR_PINK = "pink"
+    COLOR_LIGHT_GREEN = "light green"
+    COLOR_YELLOW = "yellow"
+
     def __init__(self, path):
         self.path = path
 
     def check_status(self):
-        status = IsDeployedApp.STATUS_DOWN
-        bg_color = IsDeployedApp.COLOR_PINK
+        status = self.STATUS_DOWN
+        bg_color = self.COLOR_PINK
+        time = ""
 
         if os.path.exists(self.path) and os.path.isdir(self.path):
-            if glob.glob(os.path.join(self.path, "*.deployed")):
-                status = IsDeployedApp.STATUS_DEPLOYED
-                bg_color = IsDeployedApp.COLOR_LIGHT_GREEN
-            elif glob.glob(os.path.join(self.path, "*.isdeploying")):
-                status = IsDeployedApp.STATUS_DEPLOYING
-                bg_color = IsDeployedApp.COLOR_YELLOW
+            deployed_files = glob.glob(os.path.join(self.path, "*.deployed"))
+            deploying_files = glob.glob(os.path.join(self.path, "*.isdeploying"))
 
-        return status, bg_color
+            if deployed_files:
+                status = self.STATUS_DEPLOYED
+                bg_color = self.COLOR_LIGHT_GREEN
+                time = self.get_latest_file_time(deployed_files)
+            elif deploying_files:
+                status = self.STATUS_DEPLOYING
+                bg_color = self.COLOR_YELLOW
+                time = self.get_latest_file_time(deploying_files)
+            else:
+                time = datetime.fromtimestamp(os.path.getctime(self.path)).strftime('%Y-%m-%d %H:%M')
+
+        return status, bg_color, time
+
+    def get_latest_file_time(self, files):
+        latest_file = max(files, key=os.path.getctime)
+        return datetime.fromtimestamp(os.path.getctime(latest_file)).strftime('%Y-%m-%d %H:%M')
 
 
 class IsDeployedApp(tk.Tk):
@@ -32,14 +53,6 @@ class IsDeployedApp(tk.Tk):
 
     POLL_INTERVAL = 5000
     DEFAULT_ENTRY_TEXT = "Path to jboss deployments folder"
-
-    STATUS_DOWN = "[DOWN]"
-    STATUS_DEPLOYED = "[DEPLOYED]"
-    STATUS_DEPLOYING = "[DEPLOYING]"
-
-    COLOR_PINK = "pink"
-    COLOR_LIGHT_GREEN = "light green"
-    COLOR_YELLOW = "yellow"
 
     def __init__(self):
         super().__init__()
@@ -96,10 +109,10 @@ class IsDeployedApp(tk.Tk):
     def update_status(self):
         path = self.path_entry.get()
         status_checker = StatusChecker(path)
-        status, bg_color = status_checker.check_status()
+        status, bg_color, time = status_checker.check_status()
 
         self.canvas.configure(background=bg_color)
-        self.canvas.itemconfigure(self.status_label, text=f"{status}")
+        self.canvas.itemconfigure(self.status_label, text= f"{status} since {time}" if time else status)
 
     def poll(self):
         self.update_status()
