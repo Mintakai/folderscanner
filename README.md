@@ -57,5 +57,3 @@ The app will automatically poll the status at regular intervals (default: 5000 m
 
 ## License
 This project is licensed under the MIT License.
-
-Remember to replace `yourusername` in the repository URL with your actual GitHub username. You can also customize the content further to match your project's specific details and needs.
