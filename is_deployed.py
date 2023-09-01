@@ -11,6 +11,7 @@ from datetime import datetime
 import tkinter as tk
 from tkinter import ttk
 from tkinter import filedialog
+import sys
 import os
 import glob
 import json
@@ -40,12 +41,9 @@ class StatusChecker:
         time = ""
 
         if os.path.exists(self.path) and os.path.isdir(self.path):
-            deployed_files = glob.glob(os.path.join(
-                self.path, f"{self.filename}.deployed"))
-            deploying_files = glob.glob(os.path.join(
-                self.path, f"{self.filename}.isdeploying"))
-            failed_files = glob.glob(os.path.join(
-                self.path, f"{self.filename}.failed"))
+            deployed_files = glob.glob(os.path.join(self.path, f"{self.filename}.deployed"))
+            deploying_files = glob.glob(os.path.join(self.path, f"{self.filename}.isdeploying"))
+            failed_files = glob.glob(os.path.join(self.path, f"{self.filename}.failed"))
 
             if deployed_files:
                 status = self.STATUS_DEPLOYED
@@ -76,8 +74,9 @@ class StatusChecker:
 class IsDeployedApp(tk.Tk):
     TITLE = "Is LIMS up?"
     WINDOW_SIZE = "400x135"
-    DEFAULT_FONT = "Helvetica"
+    DEFAULT_FONT = "Sans Serif"
     DEFAULT_FONT_SIZE = 10
+    DEFAULT_PADDING = (5, 5)
 
     POLL_INTERVAL = 5000
     DEFAULT_ENTRY_TEXT = "Path to jboss deployments folder"
@@ -97,12 +96,8 @@ class IsDeployedApp(tk.Tk):
         self.poll_interval = self.POLL_INTERVAL
 
         self.style = ttk.Style()
-        self.style.configure("TButton", padding=5, font=(
-            self.DEFAULT_FONT, self.DEFAULT_FONT_SIZE))
-        self.style.configure("TLabel", font=(
-            self.DEFAULT_FONT, self.DEFAULT_FONT_SIZE))
-        self.style.configure("TEntry", padding=5, font=(
-            self.DEFAULT_FONT, self.DEFAULT_FONT_SIZE))
+        self.style.configure("TButton", padding=self.DEFAULT_PADDING, font=(self.DEFAULT_FONT, self.DEFAULT_FONT_SIZE))
+        self.style.configure("TEntry", padding=self.DEFAULT_PADDING, font=(self.DEFAULT_FONT, self.DEFAULT_FONT_SIZE))
 
         self.create_widgets()
         self.poll()
@@ -114,33 +109,39 @@ class IsDeployedApp(tk.Tk):
         self.filename_frame = ttk.Frame(self)
         self.filename_frame.pack(fill=tk.X, padx=10)
 
-        self.path_entry = ttk.Entry(self.path_frame)
+        self.path_entry = ttk.Entry(self.path_frame, style="TEntry")
         self.path_entry.pack(fill=tk.X, expand=True, side=tk.LEFT)
-        self.path_entry.insert(
-            0, config.path if config.exists() else self.DEFAULT_ENTRY_TEXT)
-        self.path_entry.bind(
-            "<KeyRelease>", lambda event: self.after(100, self.update_status))
+        self.path_entry.insert(0, config.path if config.exists() else self.DEFAULT_ENTRY_TEXT)
+        self.path_entry.bind("<KeyRelease>", lambda event: self.after(100, self.update_status))
+        self.path_entry.bind("<FocusIn>", lambda event: self.clear_text(self.path_entry))
+        self.path_entry.bind("<FocusOut>", lambda event: self.reinsert_text(self.path_entry))
 
-        self.filename = ttk.Entry(self.filename_frame)
+        self.filename = ttk.Entry(self.filename_frame, style="TEntry")
         self.filename.pack(fill=tk.X, expand=True, side=tk.LEFT)
-        self.filename.insert(
-            0, config.filename if config.exists() else self.DEFAULT_FILENAME_TEXT)
-        self.filename.bind(
-            "<KeyRelease>", lambda event: self.after(100, self.update_status))
+        self.filename.insert(0, config.filename if config.exists() else self.DEFAULT_FILENAME_TEXT)
+        self.filename.bind("<KeyRelease>", lambda event: self.after(100, self.update_status))
         self.filename.bind("<Return>", lambda event: self.update_status())
+        self.filename.bind("<FocusIn>", lambda event: self.clear_text(self.filename))
+        self.filename.bind("<FocusOut>", lambda event: self.reinsert_text(self.filename))
 
-        self.path_button = ttk.Button(
-            self.path_frame, text="Browse", command=self.browse)
+        self.path_button = ttk.Button(self.path_frame, text="Browse", command=self.browse, style="TButton")
         self.path_button.pack(side=tk.RIGHT)
 
         self.canvas = tk.Canvas(self, width=400, height=50)
         self.canvas.pack(padx=10, pady=(10, 10))
 
-        self.status_label = self.canvas.create_text(
-            200, 25, font=(self.DEFAULT_FONT, self.DEFAULT_FONT_SIZE, "bold"))
+        self.status_label = self.canvas.create_text(200, 25, font=(self.DEFAULT_FONT, self.DEFAULT_FONT_SIZE, "bold"))
+        self.canvas.bind("<Button-1>", lambda event: self.show_info_control(True))
 
-        self.canvas.bind(
-            "<Button-1>", lambda event: self.show_info_control(True))
+    def clear_text(self, field):
+        current_text = field.get()
+        if current_text == self.DEFAULT_ENTRY_TEXT or current_text == self.DEFAULT_FILENAME_TEXT:
+            field.delete(0, tk.END)
+
+    def reinsert_text(self, field):
+        current_text = field.get()
+        if current_text == "":
+            field.insert(0, self.DEFAULT_ENTRY_TEXT if field == self.path_entry else self.DEFAULT_FILENAME_TEXT)
 
     def browse(self):
         path = filedialog.askdirectory()
@@ -184,15 +185,19 @@ class IsDeployedApp(tk.Tk):
 
 class Sound:
     def __init__(self) -> None:
+        base_dir = getattr(sys, '_MEIPASS', os.path.abspath(os.path.dirname(__file__)))
+        self.ok_sound_path = os.path.join(base_dir, "sfx", "ok.mp3")
+        self.error_sound_path = os.path.join(base_dir, "sfx", "error.mp3")
+
         mixer.init()
-        self.error_sound = mixer.Sound("sounds/error.mp3")
-        self.ok_sound = mixer.Sound("sounds/ok.mp3")
 
     def play_error(self):
-        self.error_sound.play()
+        error_sound = mixer.Sound(self.error_sound_path)
+        error_sound.play()
 
     def play_success(self):
-        self.ok_sound.play()
+        ok_sound = mixer.Sound(self.ok_sound_path)
+        ok_sound.play()
 
 class History:
     def __init__(self) -> None:
@@ -211,6 +216,7 @@ class History:
                 sound.play_success()
             else:
                 sound.play_error()
+
             self.status_history.append(status)
 
 class Config:
