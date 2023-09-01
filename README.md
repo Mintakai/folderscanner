@@ -59,10 +59,10 @@ Clicking on the status bar will pop this up at any time.)
 
 ## Features
 
-- Check the deployment status of a specified folder.
+- Check the deployment status of a specified folder with a specific filename.
 - Visual indication of deployment status through background colors and status text.
 - Timestamp display of the last change in status.
-- Remember your earlier folder and filename.
+- Remember last folder and filename.
 - Play a sound when status changes.
 - Info message at first startup (And concurrent ones, if not disabled).
 
