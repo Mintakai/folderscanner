@@ -13,19 +13,26 @@ from tkinter import ttk
 from tkinter import filedialog
 import os
 import glob
+import json
+
+os.environ['PYGAME_HIDE_SUPPORT_PROMPT'] = "hide"
+from pygame import mixer
 
 
 class StatusChecker:
+    STATUS_FAILED = "[FAILED]"
     STATUS_DOWN = "[DOWN]"
     STATUS_DEPLOYED = "[DEPLOYED]"
     STATUS_DEPLOYING = "[DEPLOYING]"
 
+    COLOR_RED = "red"
     COLOR_PINK = "pink"
     COLOR_LIGHT_GREEN = "light green"
     COLOR_YELLOW = "yellow"
 
-    def __init__(self, path):
+    def __init__(self, path, filename):
         self.path = path
+        self.filename = filename
 
     def check_status(self):
         status = self.STATUS_DOWN
@@ -33,8 +40,12 @@ class StatusChecker:
         time = ""
 
         if os.path.exists(self.path) and os.path.isdir(self.path):
-            deployed_files = glob.glob(os.path.join(self.path, "*.deployed"))
-            deploying_files = glob.glob(os.path.join(self.path, "*.isdeploying"))
+            deployed_files = glob.glob(os.path.join(
+                self.path, f"{self.filename}.deployed"))
+            deploying_files = glob.glob(os.path.join(
+                self.path, f"{self.filename}.isdeploying"))
+            failed_files = glob.glob(os.path.join(
+                self.path, f"{self.filename}.failed"))
 
             if deployed_files:
                 status = self.STATUS_DEPLOYED
@@ -44,8 +55,16 @@ class StatusChecker:
                 status = self.STATUS_DEPLOYING
                 bg_color = self.COLOR_YELLOW
                 time = self.get_latest_file_time(deploying_files)
+            elif failed_files:
+                status = self.STATUS_FAILED
+                bg_color = self.COLOR_RED
+                time = self.get_latest_file_time(failed_files)
             else:
-                time = datetime.fromtimestamp(os.path.getctime(self.path)).strftime('%Y-%m-%d %H:%M')
+                time = datetime.fromtimestamp(os.path.getctime(
+                    self.path)).strftime('%Y-%m-%d %H:%M')
+
+        history.add_status(status)
+
 
         return status, bg_color, time
 
@@ -56,12 +75,19 @@ class StatusChecker:
 
 class IsDeployedApp(tk.Tk):
     TITLE = "Is LIMS up?"
-    WINDOW_SIZE = "400x120"
+    WINDOW_SIZE = "400x135"
     DEFAULT_FONT = "Helvetica"
     DEFAULT_FONT_SIZE = 10
 
     POLL_INTERVAL = 5000
     DEFAULT_ENTRY_TEXT = "Path to jboss deployments folder"
+    DEFAULT_FILENAME_TEXT = "Filename to scan for"
+    INFO_TITLE = "Information about the app"
+    INFO_TEXT = "Browse for the folder containing the deployed files\n" \
+        "and enter the filename to scan for.\n\n" \
+        "The application will check the status of the folder every 5 seconds.\n\n" \
+        "Press ENTER at the filename field to refresh instantly\n\n" \
+        "Show this message at startup?"
 
     def __init__(self):
         super().__init__()
@@ -71,22 +97,37 @@ class IsDeployedApp(tk.Tk):
         self.poll_interval = self.POLL_INTERVAL
 
         self.style = ttk.Style()
-        self.style.configure("TButton", padding=5, font=(self.DEFAULT_FONT, self.DEFAULT_FONT_SIZE))
-        self.style.configure("TLabel", font=(self.DEFAULT_FONT, self.DEFAULT_FONT_SIZE))
-        self.style.configure("TEntry", padding=5, font=(self.DEFAULT_FONT, self.DEFAULT_FONT_SIZE))
+        self.style.configure("TButton", padding=5, font=(
+            self.DEFAULT_FONT, self.DEFAULT_FONT_SIZE))
+        self.style.configure("TLabel", font=(
+            self.DEFAULT_FONT, self.DEFAULT_FONT_SIZE))
+        self.style.configure("TEntry", padding=5, font=(
+            self.DEFAULT_FONT, self.DEFAULT_FONT_SIZE))
 
         self.create_widgets()
         self.poll()
 
     def create_widgets(self):
         self.path_frame = ttk.Frame(self)
-        self.path_frame.pack(fill=tk.X, padx=10, pady=(10, 0))
+        self.path_frame.pack(fill=tk.X, padx=10)
 
-        self.path_entry = ttk.Entry(self.path_frame, foreground="grey")
+        self.filename_frame = ttk.Frame(self)
+        self.filename_frame.pack(fill=tk.X, padx=10)
+
+        self.path_entry = ttk.Entry(self.path_frame)
         self.path_entry.pack(fill=tk.X, expand=True, side=tk.LEFT)
-        self.path_entry.insert(0, self.DEFAULT_ENTRY_TEXT)
-        self.path_entry.bind("<FocusIn>", self.on_entry_focus_in)
-        self.path_entry.bind("<FocusOut>", self.on_entry_focus_out)
+        self.path_entry.insert(
+            0, config.path if config.exists() else self.DEFAULT_ENTRY_TEXT)
+        self.path_entry.bind(
+            "<KeyRelease>", lambda event: self.after(100, self.update_status))
+
+        self.filename = ttk.Entry(self.filename_frame)
+        self.filename.pack(fill=tk.X, expand=True, side=tk.LEFT)
+        self.filename.insert(
+            0, config.filename if config.exists() else self.DEFAULT_FILENAME_TEXT)
+        self.filename.bind(
+            "<KeyRelease>", lambda event: self.after(100, self.update_status))
+        self.filename.bind("<Return>", lambda event: self.update_status())
 
         self.path_button = ttk.Button(
             self.path_frame, text="Browse", command=self.browse)
@@ -98,15 +139,8 @@ class IsDeployedApp(tk.Tk):
         self.status_label = self.canvas.create_text(
             200, 25, font=(self.DEFAULT_FONT, self.DEFAULT_FONT_SIZE, "bold"))
 
-    def on_entry_focus_in(self, event):
-        if self.path_entry.get() == self.DEFAULT_ENTRY_TEXT:
-            self.path_entry.delete(0, tk.END)
-            self.path_entry.configure(foreground="black")
-
-    def on_entry_focus_out(self, event):
-        if not self.path_entry.get():
-            self.path_entry.insert(0, self.DEFAULT_ENTRY_TEXT)
-            self.path_entry.configure(foreground="grey")
+        self.canvas.bind(
+            "<Button-1>", lambda event: self.show_info_control(True))
 
     def browse(self):
         path = filedialog.askdirectory()
@@ -117,17 +151,96 @@ class IsDeployedApp(tk.Tk):
 
     def update_status(self):
         path = self.path_entry.get()
-        status_checker = StatusChecker(path)
+        filename = self.filename.get()
+        config.path = path
+        config.filename = filename
+        config.save()
+        status_checker = StatusChecker(path, filename)
         status, bg_color, time = status_checker.check_status()
-
         self.canvas.configure(background=bg_color)
-        self.canvas.itemconfigure(self.status_label, text= f"{status} since {time}" if time else status)
+        self.canvas.itemconfigure(
+            self.status_label, text=f"{status} since {time}" if time else status, fill="white" if bg_color == "red" else "black")
 
     def poll(self):
         self.update_status()
         self.after(self.poll_interval, self.poll)
 
+    def show_info_control(self, wasClick=False):
+        if config.show_info:
+            show_info = self.show_info_message()
+            config.show_info = True if show_info else False
+
+        elif (wasClick or config.show_info is None):
+            show_info = self.show_info_message()
+            config.show_info = True if show_info else False
+
+        config.save()
+
+    def show_info_message(self):
+        result = tk.messagebox.askyesno(
+            self.INFO_TITLE, self.INFO_TEXT, icon="info", default="yes")
+        self.focus_force()
+        return result
+
+class Sound:
+    def __init__(self) -> None:
+        mixer.init()
+        self.error_sound = mixer.Sound("sounds/error.mp3")
+        self.ok_sound = mixer.Sound("sounds/ok.mp3")
+
+    def play_error(self):
+        self.error_sound.play()
+
+    def play_success(self):
+        self.ok_sound.play()
+
+class History:
+    def __init__(self) -> None:
+        self.status_history = []
+
+    def add_status(self, status):
+        status_history_size = len(self.status_history)
+
+        if status_history_size >= 10:
+            self.status_history.pop(0)
+
+        if status_history_size == 0:
+            self.status_history.append(status)
+        elif status is not self.status_history[-1]:
+            if status is StatusChecker.STATUS_DEPLOYED:
+                sound.play_success()
+            else:
+                sound.play_error()
+            self.status_history.append(status)
+
+class Config:
+    def __init__(self, path=None, filename=None, show_info=None) -> None:
+        self.path = path
+        self.filename = filename
+        self.show_info = show_info
+
+    def save(self):
+        with open("config.json", "w") as f:
+            json.dump(self.__dict__, f)
+
+    def load(self):
+        if os.path.exists("config.json"):
+            with open("config.json", "r") as f:
+                config = json.load(f)
+                self.path = config["path"]
+                self.filename = config["filename"]
+                self.show_info = config["show_info"]
+
+    def exists(self):
+        return os.path.exists("config.json")
+
 
 if __name__ == "__main__":
+    config = Config()
+    config.load()
+    history = History()
+    sound = Sound()
     app = IsDeployedApp()
+    app.show_info_control()
+    app.update_status()
     app.mainloop()
