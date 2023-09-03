@@ -87,23 +87,19 @@ Clicking on the status bar will pop this up at any time.)
 
   ```
 
-3. Make sure you have pygame installed
+3. Run installation of requirements
 
   ```
 
-  pip install pygame
+  pip install -r requirements.txt
 
   ```
+  - pygame
+    - For sound effects
+  - pyinstaller
+    - For building the exe
 
-4. Make sure you have pyinstaller installed
-
-  ```
-
-  pip install pyinstaller
-
-  ```
-
-5. Build the standalone executable using PyInstaller:
+4. Build the standalone executable using PyInstaller:
 
   ```
 
