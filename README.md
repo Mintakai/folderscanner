@@ -79,6 +79,12 @@ Clicking on the status bar will pop this up at any time.)
 
 **1. Clone the repository to your local machine**
 
+  ```
+
+  git clone git@github.com:Mintakai/folderscanner.git
+
+  ```
+
 **2. Navigate to the project directory**
 
   ```
