@@ -7,6 +7,7 @@ The application is written in Python 3.7 and uses the tkinter library for the GU
 
 Author: Toni Heinänen
 """
+
 from datetime import datetime
 import tkinter as tk
 from tkinter import ttk
