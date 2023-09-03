@@ -72,6 +72,7 @@ Clicking on the status bar will pop this up at any time.)
 
 - Python 3.x
 - Tkinter (usually included with Python)
+- Pygame (This is required for the sounds)
 - PyInstaller (for building the executable)
 
 ### Installation
@@ -80,25 +81,35 @@ Clicking on the status bar will pop this up at any time.)
 
 2. Navigate to the project directory:
 
-   ```
+  ```
 
-   cd is_deployed
+  cd is_deployed
 
-   ```
-3. Make sure you have pyinstaller installed
+  ```
 
-   ```
+3. Make sure you have pygame installed
 
-   pip install pyinstaller
+  ```
 
-   ```
-4. Build the standalone executable using PyInstaller:
+  pip install pygame
 
-   ```
+  ```
 
-   pyinstaller --onefile --noconsole --add-data "sfx\ok.mp3;sfx" --add-data "sfx\error.mp3;sfx" .\is_deployed.py
+4. Make sure you have pyinstaller installed
 
-   ```
+  ```
+
+  pip install pyinstaller
+
+  ```
+
+5. Build the standalone executable using PyInstaller:
+
+  ```
+
+  pyinstaller --onefile --noconsole --add-data "sfx\ok.mp3;sfx" --add-data "sfx\error.mp3;sfx" .\is_deployed.py
+
+  ```
 
 - onefile: Generate a single standalone executable file.
 - noconsole: Do not display a console window when the executable is run.
