@@ -77,9 +77,9 @@ Clicking on the status bar will pop this up at any time.)
 
 ### Installation
 
-1. Clone the repository to your local machine
+**1. Clone the repository to your local machine**
 
-2. Navigate to the project directory:
+**2. Navigate to the project directory**
 
   ```
 
@@ -87,7 +87,7 @@ Clicking on the status bar will pop this up at any time.)
 
   ```
 
-3. Run installation of requirements
+**3. Run installation of requirements**
 
   ```
 
@@ -99,7 +99,7 @@ Clicking on the status bar will pop this up at any time.)
   - pyinstaller
     - For building the exe
 
-4. Build the standalone executable using PyInstaller:
+**4. Build the standalone executable using PyInstaller**
 
   ```
 
