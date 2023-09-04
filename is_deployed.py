@@ -3,7 +3,7 @@ This module contains a GUI application that checks the status of a folder contai
 The application displays the status of the folder (deployed, deploying, or down) and the time since last status change.
 The user can browse for the folder to check and the application will poll the folder every 5 seconds to update the status.
 
-The application is written in Python 3.7 and uses the tkinter library for the GUI.
+The application is written in Python 3.11 and uses the tkinter library for the GUI.
 
 Author: Toni Heinänen
 """
