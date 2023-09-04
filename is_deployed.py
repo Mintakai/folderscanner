@@ -20,6 +20,22 @@ import json
 os.environ['PYGAME_HIDE_SUPPORT_PROMPT'] = "hide"
 from pygame import mixer
 
+TITLE = "Folderscanner (is_deployed?)"
+WINDOW_SIZE = "400x135"
+DEFAULT_FONT = "Sans Serif"
+DEFAULT_FONT_SIZE = 10
+DEFAULT_PADDING = (5, 5)
+
+POLL_INTERVAL = 5000
+
+DEFAULT_ENTRY_TEXT = "Path to jboss deployments folder"
+DEFAULT_FILENAME_TEXT = "Filename to scan for"
+INFO_TITLE = "Information about the app"
+INFO_TEXT = "Browse for the folder containing the deployed files\n" \
+    "and enter the filename to scan for.\n\n" \
+    "The application will check the status of the folder every 5 seconds.\n\n" \
+    "Press ENTER at the filename field to refresh instantly\n\n" \
+    "Show this message at startup?"
 
 class StatusChecker:
     STATUS_FAILED = "[FAILED]"
@@ -73,43 +89,24 @@ class StatusChecker:
 
 
 class IsDeployedApp(tk.Tk):
-    TITLE = "Folderscanner (is_deployed?)"
-    WINDOW_SIZE = "400x135"
-    DEFAULT_FONT = "Sans Serif"
-    DEFAULT_FONT_SIZE = 10
-    DEFAULT_PADDING = (5, 5)
-
-    POLL_INTERVAL = 5000
-    DEFAULT_ENTRY_TEXT = "Path to jboss deployments folder"
-    DEFAULT_FILENAME_TEXT = "Filename to scan for"
-    INFO_TITLE = "Information about the app"
-    INFO_TEXT = "Browse for the folder containing the deployed files\n" \
-        "and enter the filename to scan for.\n\n" \
-        "The application will check the status of the folder every 5 seconds.\n\n" \
-        "Press ENTER at the filename field to refresh instantly\n\n" \
-        "Show this message at startup?"
-
     def __init__(self):
         super().__init__()
-        self.title(self.TITLE)
+        self.title(TITLE)
         icon = tk.PhotoImage(file=os.path.join(config.get_base_dir(), "gfx", "isdep.png"))
         self.iconphoto(False, icon)
-        self.geometry(self.WINDOW_SIZE)
+        self.geometry(WINDOW_SIZE)
         self.resizable(False, False)
-        self.poll_interval = self.POLL_INTERVAL
+        self.poll_interval = POLL_INTERVAL
 
         self.style = ttk.Style()
-        self.style.configure("TButton", padding=self.DEFAULT_PADDING, font=(self.DEFAULT_FONT, self.DEFAULT_FONT_SIZE))
-        self.style.configure("TEntry", padding=self.DEFAULT_PADDING, font=(self.DEFAULT_FONT, self.DEFAULT_FONT_SIZE))
+        self.style.configure("TButton", padding=DEFAULT_PADDING, font=(DEFAULT_FONT, DEFAULT_FONT_SIZE))
+        self.style.configure("TEntry", padding=DEFAULT_PADDING, font=(DEFAULT_FONT, DEFAULT_FONT_SIZE))
 
         self.create_widgets()
         self.poll()
 
     def run_checks(self):
-        if sound.is_muted():
-            self.set_title("[MUTED] " + self.TITLE)
-        else:
-            self.set_title(self.TITLE)
+        self.set_title("[MUTED] " + TITLE) if sound.is_muted() else self.set_title(TITLE)
 
     def toggle_mute(self):
         sound.mute()
@@ -127,7 +124,7 @@ class IsDeployedApp(tk.Tk):
 
         self.path_entry = ttk.Entry(self.path_frame, style="TEntry")
         self.path_entry.pack(fill=tk.X, expand=True, side=tk.LEFT)
-        self.path_entry.insert(0, config.path if config.exists() else self.DEFAULT_ENTRY_TEXT)
+        self.path_entry.insert(0, config.path if config.valid_entry() else DEFAULT_ENTRY_TEXT)
         self.path_entry.bind("<KeyRelease>", lambda event: self.after(100, self.update_status))
         self.path_entry.bind("<FocusIn>", lambda event: self.clear_text(self.path_entry))
         self.path_entry.bind("<FocusOut>", lambda event: self.reinsert_text(self.path_entry))
@@ -137,7 +134,7 @@ class IsDeployedApp(tk.Tk):
 
         self.filename = ttk.Entry(self.filename_frame, style="TEntry")
         self.filename.pack(fill=tk.X, expand=True, side=tk.LEFT)
-        self.filename.insert(0, config.filename if config.exists() else self.DEFAULT_FILENAME_TEXT)
+        self.filename.insert(0, config.filename if config.valid_filename() else DEFAULT_FILENAME_TEXT)
         self.filename.bind("<KeyRelease>", lambda event: self.after(100, self.update_status))
         self.filename.bind("<Return>", lambda event: self.update_status())
         self.filename.bind("<FocusIn>", lambda event: self.clear_text(self.filename))
@@ -149,18 +146,18 @@ class IsDeployedApp(tk.Tk):
         self.canvas = tk.Canvas(self, width=400, height=50)
         self.canvas.pack(padx=10, pady=(10, 10))
 
-        self.status_label = self.canvas.create_text(200, 25, font=(self.DEFAULT_FONT, self.DEFAULT_FONT_SIZE, "bold"))
+        self.status_label = self.canvas.create_text(200, 25, font=(DEFAULT_FONT, DEFAULT_FONT_SIZE, "bold"))
         self.canvas.bind("<Button-1>", lambda event: self.show_info_control(True))
 
     def clear_text(self, field):
         current_text = field.get()
-        if current_text == self.DEFAULT_ENTRY_TEXT or current_text == self.DEFAULT_FILENAME_TEXT:
+        if current_text == DEFAULT_ENTRY_TEXT or current_text == DEFAULT_FILENAME_TEXT:
             field.delete(0, tk.END)
 
     def reinsert_text(self, field):
         current_text = field.get()
         if current_text == "":
-            field.insert(0, self.DEFAULT_ENTRY_TEXT if field == self.path_entry else self.DEFAULT_FILENAME_TEXT)
+            field.insert(0, DEFAULT_ENTRY_TEXT if field == self.path_entry else DEFAULT_FILENAME_TEXT)
 
     def browse(self):
         path = filedialog.askdirectory()
@@ -197,8 +194,7 @@ class IsDeployedApp(tk.Tk):
         config.save()
 
     def show_info_message(self):
-        result = tk.messagebox.askyesno(
-            self.INFO_TITLE, self.INFO_TEXT, icon="info", default="yes")
+        result = tk.messagebox.askyesno(INFO_TITLE, INFO_TEXT, icon="info", default="yes")
         self.focus_force()
         return result
 
@@ -210,7 +206,7 @@ class Sound:
         self.error_sound_path = os.path.join(config.base_dir, "sfx", "error.mp3")
         self.ok_sound = mixer.Sound(self.ok_sound_path)
         self.error_sound = mixer.Sound(self.error_sound_path)
-        self.muted = False
+        self.muted = config.read_mute_status()
 
     def play_error(self):
         if not self.muted:
@@ -222,6 +218,12 @@ class Sound:
 
     def mute(self):
         self.muted = True if not self.muted else False
+        if self.is_muted():
+            config.muted = True
+        else:
+            config.muted = False
+
+        config.save()
 
     def is_muted(self):
         return self.muted
@@ -248,11 +250,12 @@ class History:
             self.status_history.append(status)
 
 class Config:
-    def __init__(self, path=None, filename=None, show_info=None) -> None:
+    def __init__(self, path=None, filename=None, show_info=None, muted=None) -> None:
         self.base_dir = getattr(sys, '_ISDEP', os.path.abspath(os.path.dirname(__file__)))
         self.path = path
         self.filename = filename
         self.show_info = show_info
+        self.muted = muted
 
     def save(self):
         with open("config.json", "w") as f:
@@ -260,17 +263,30 @@ class Config:
 
     def load(self):
         if os.path.exists("config.json"):
-            with open("config.json", "r") as f:
-                config = json.load(f)
-                self.path = config["path"]
-                self.filename = config["filename"]
-                self.show_info = config["show_info"]
+            try:
+                with open("config.json", "r") as f:
+                    config = json.load(f)
+                    self.path = config["path"]
+                    self.filename = config["filename"]
+                    self.show_info = config["show_info"]
+                    self.muted = config["muted"]
+            except KeyError:
+                self.save()
 
     def exists(self):
         return os.path.exists("config.json")
 
     def get_base_dir(self):
         return self.base_dir
+
+    def read_mute_status(self):
+        return self.muted
+
+    def valid_entry(self):
+        return False if self.path == None else True
+
+    def valid_filename(self):
+        return False if self.filename == None else True
 
 
 if __name__ == "__main__":
@@ -281,4 +297,5 @@ if __name__ == "__main__":
     app = IsDeployedApp()
     app.show_info_control()
     app.update_status()
+    app.run_checks()
     app.mainloop()
