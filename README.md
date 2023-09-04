@@ -1,4 +1,5 @@
 # folderscanner (is_deployed)
+![folderscanner_banner][https://github.com/Mintakai/folderscanner/blob/main/docimg/logo_banner.png]
 
 ## Patchnotes
 

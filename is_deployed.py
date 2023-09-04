@@ -73,7 +73,7 @@ class StatusChecker:
 
 
 class IsDeployedApp(tk.Tk):
-    TITLE = "Is LIMS up?"
+    TITLE = "Folderscanner (is_deployed?)"
     WINDOW_SIZE = "400x135"
     DEFAULT_FONT = "Sans Serif"
     DEFAULT_FONT_SIZE = 10
@@ -92,6 +92,8 @@ class IsDeployedApp(tk.Tk):
     def __init__(self):
         super().__init__()
         self.title(self.TITLE)
+        icon = tk.PhotoImage(file=os.path.join(config.get_base_dir(), "gfx", "isdep.png"))
+        self.iconphoto(False, icon)
         self.geometry(self.WINDOW_SIZE)
         self.resizable(False, False)
         self.poll_interval = self.POLL_INTERVAL
@@ -102,6 +104,19 @@ class IsDeployedApp(tk.Tk):
 
         self.create_widgets()
         self.poll()
+
+    def run_checks(self):
+        if sound.is_muted():
+            self.set_title("[MUTED] " + self.TITLE)
+        else:
+            self.set_title(self.TITLE)
+
+    def toggle_mute(self):
+        sound.mute()
+        self.run_checks()
+
+    def set_title(self, title):
+        self.title(title)
 
     def create_widgets(self):
         self.path_frame = ttk.Frame(self)
@@ -117,6 +132,9 @@ class IsDeployedApp(tk.Tk):
         self.path_entry.bind("<FocusIn>", lambda event: self.clear_text(self.path_entry))
         self.path_entry.bind("<FocusOut>", lambda event: self.reinsert_text(self.path_entry))
 
+        self.path_button = ttk.Button(self.path_frame, text="Browse", command=self.browse, style="TButton")
+        self.path_button.pack(side=tk.RIGHT)
+
         self.filename = ttk.Entry(self.filename_frame, style="TEntry")
         self.filename.pack(fill=tk.X, expand=True, side=tk.LEFT)
         self.filename.insert(0, config.filename if config.exists() else self.DEFAULT_FILENAME_TEXT)
@@ -125,8 +143,8 @@ class IsDeployedApp(tk.Tk):
         self.filename.bind("<FocusIn>", lambda event: self.clear_text(self.filename))
         self.filename.bind("<FocusOut>", lambda event: self.reinsert_text(self.filename))
 
-        self.path_button = ttk.Button(self.path_frame, text="Browse", command=self.browse, style="TButton")
-        self.path_button.pack(side=tk.RIGHT)
+        self.mute_button = ttk.Button(self.filename_frame, text="Mute", command=lambda: self.toggle_mute(), style="TButton")
+        self.mute_button.pack(side=tk.RIGHT)
 
         self.canvas = tk.Canvas(self, width=400, height=50)
         self.canvas.pack(padx=10, pady=(10, 10))
@@ -186,19 +204,28 @@ class IsDeployedApp(tk.Tk):
 
 class Sound:
     def __init__(self) -> None:
-        base_dir = getattr(sys, '_MEIPASS', os.path.abspath(os.path.dirname(__file__)))
-        self.ok_sound_path = os.path.join(base_dir, "sfx", "ok.mp3")
-        self.error_sound_path = os.path.join(base_dir, "sfx", "error.mp3")
-
         mixer.init()
 
+        self.ok_sound_path = os.path.join(config.base_dir, "sfx", "ok.mp3")
+        self.error_sound_path = os.path.join(config.base_dir, "sfx", "error.mp3")
+        self.ok_sound = mixer.Sound(self.ok_sound_path)
+        self.error_sound = mixer.Sound(self.error_sound_path)
+        self.muted = False
+
     def play_error(self):
-        error_sound = mixer.Sound(self.error_sound_path)
-        error_sound.play()
+        if not self.muted:
+            self.error_sound.play()
 
     def play_success(self):
-        ok_sound = mixer.Sound(self.ok_sound_path)
-        ok_sound.play()
+        if not self.muted:
+            self.ok_sound.play()
+
+    def mute(self):
+        self.muted = True if not self.muted else False
+
+    def is_muted(self):
+        return self.muted
+
 
 class History:
     def __init__(self) -> None:
@@ -222,6 +249,7 @@ class History:
 
 class Config:
     def __init__(self, path=None, filename=None, show_info=None) -> None:
+        self.base_dir = getattr(sys, '_ISDEP', os.path.abspath(os.path.dirname(__file__)))
         self.path = path
         self.filename = filename
         self.show_info = show_info
@@ -240,6 +268,9 @@ class Config:
 
     def exists(self):
         return os.path.exists("config.json")
+
+    def get_base_dir(self):
+        return self.base_dir
 
 
 if __name__ == "__main__":
