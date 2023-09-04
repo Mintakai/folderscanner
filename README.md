@@ -3,6 +3,13 @@
 
 ## Patchnotes
 
+### 04.09.2023 Version a_4
+
+- Added mute function, as promised.
+  - Click on the mute button to mute status alert sounds (error / ok).
+    - The title bar will show text [MUTED] if mute is on.
+- Added icon.
+
 ### 01.09.2023 Version a_3
 
 - Added a field to input a specific filename, you're looking for.
@@ -65,6 +72,7 @@ Clicking on the status bar will pop this up at any time.)
 - Timestamp display of the last change in status.
 - Remember last folder and filename.
 - Play a sound when status changes.
+  - Mute / Unmute sounds.
 - Info message at first startup (And concurrent ones, if not disabled).
 
 ## Usage
@@ -110,7 +118,7 @@ Clicking on the status bar will pop this up at any time.)
 
   ```
 
-  pyinstaller --onefile --noconsole --add-data "sfx\ok.mp3;sfx" --add-data "sfx\error.mp3;sfx" .\is_deployed.py
+  pyinstaller --onefile --noconsole --add-data "sfx\ok.mp3;sfx" --add-data "sfx\error.mp3;sfx" --add-data "gfx\isdep.png;gfx" .\is_deployed.py
 
   ```
 
